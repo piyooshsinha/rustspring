@@ -1,0 +1,11 @@
+# Defaults for every profile — the application.yml of this framework.
+
+[server]
+host = "127.0.0.1"
+port = 8080
+
+[static]
+dir = "frontend/dist"
+
+[greeting]
+template = "Hello, {name}!"

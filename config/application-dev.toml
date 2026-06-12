@@ -1,0 +1,8 @@
+# Active when APP_PROFILE=dev (the default).
+
+[database]
+url = "postgres://postgres:postgres@localhost:5432/postgres"
+max_connections = 5
+
+[greeting]
+template = "Hey {name}, welcome to the dev profile!"

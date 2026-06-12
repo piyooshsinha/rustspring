@@ -1,0 +1,15 @@
+[package]
+name = "demo-app"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+rustspring = { path = "../crates/rustspring" }
+serde = { workspace = true }
+# Direct deps because #[tokio::main] and derive(sqlx::FromRow) expand to
+# paths that must resolve in this crate; re-exports don't satisfy macros.
+tokio = { workspace = true }
+sqlx = { workspace = true }
