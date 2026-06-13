@@ -4,8 +4,17 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 authors.workspace = true
 description = "A Spring Boot-style application framework for Rust: profiles, config, DI-style singletons, connection pools, transactions, and SPA serving out of the box."
+documentation = "https://docs.rs/rustspring"
+readme = "README.md"
+keywords = ["web-framework", "spring", "axum", "sqlx", "backend"]
+categories = ["web-programming::http-server", "web-programming"]
+
+# Build docs.rs with every backend so the MySQL/SQLite items are documented.
+[package.metadata.docs.rs]
+all-features = true
 
 [features]
 default = ["postgres"]

@@ -9,6 +9,7 @@ edition = "2021"
 version = "0.1.0"
 license = "Apache-2.0"
 repository = "https://github.com/piyooshsinha/rustspring"
+homepage = "https://github.com/piyooshsinha/rustspring"
 authors = ["Piyoosh Sinha <piyooshsinha@gmail.com>"]
 
 [workspace.dependencies]
