@@ -1,6 +1,8 @@
 [workspace]
 resolver = "2"
 members = ["crates/rustspring", "crates/rustspring-macros", "app"]
+# The cargo-generate template contains liquid placeholders, not valid TOML.
+exclude = ["template"]
 
 [workspace.package]
 edition = "2021"

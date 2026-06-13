@@ -1,0 +1,15 @@
+# Defaults for every profile. Profile overrides go in
+# application-{profile}.toml, selected with APP_PROFILE (default: dev).
+
+[server]
+host = "127.0.0.1"
+port = 8080
+
+# Uncomment to get a managed connection pool (Inject<PgPool>):
+# [database]
+# url = "postgres://postgres:postgres@localhost:5432/postgres"
+# max_connections = 10
+
+# Uncomment to serve a built SPA (e.g. React) with index.html fallback:
+# [static]
+# dir = "frontend/dist"

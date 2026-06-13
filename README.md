@@ -37,9 +37,24 @@ crates/rustspring/   the framework crate — depend on this in your own apps
 app/                 demo application showing every feature
 config/              application.toml + per-profile overrides
 frontend/            React (Vite) app: proxied in dev, served by the backend in prod
+template/            cargo-generate template for scaffolding new apps
 ```
 
-## Quick start (run the demo)
+## Quick start
+
+### Scaffold your own app (recommended)
+
+```sh
+cargo install cargo-generate
+cargo generate --git https://github.com/piyooshsinha/rustspring template --name myapp
+cd myapp && cargo run
+```
+
+That gives you a running application with profiles, config, a health
+endpoint, and an example service — add a `[database]` section when you need
+the pool.
+
+### Or run the demo
 
 ```sh
 git clone https://github.com/piyooshsinha/rustspring
@@ -258,7 +273,7 @@ The [app/](app) crate exercises every feature:
 - [x] `#[derive(Component)]` with constructor-based dependency resolution
 - [x] Automatic dependency ordering — registration order is irrelevant
 - [ ] MySQL / SQLite support behind feature flags
-- [ ] `cargo generate` template for scaffolding new apps
+- [x] `cargo generate` template for scaffolding new apps
 
 Contributions welcome — open an issue or PR.
 
