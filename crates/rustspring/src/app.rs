@@ -9,10 +9,17 @@ use axum::{Extension, Json, Router};
 use serde_json::json;
 use tower_http::trace::TraceLayer;
 
-use crate::{config::ConfigSource, context::AppContext};
+use crate::{
+    component::{Component, ComponentError},
+    config::ConfigSource,
+    context::AppContext,
+};
+
+type DeferredConstructor = Box<dyn FnOnce(&mut AppContext) -> Result<(), ComponentError> + Send>;
 
 pub struct Application {
     context: AppContext,
+    constructors: Vec<DeferredConstructor>,
     router: Router,
 }
 
@@ -26,6 +33,7 @@ impl Application {
     pub fn new() -> Self {
         Self {
             context: AppContext::default(),
+            constructors: Vec::new(),
             router: Router::new(),
         }
     }
@@ -34,6 +42,19 @@ impl Application {
     /// the `Inject<T>` extractor. The Spring analogue is declaring a `@Bean`.
     pub fn manage<T: Send + Sync + 'static>(mut self, component: T) -> Self {
         self.context.register(component);
+        self
+    }
+
+    /// Register a `#[derive(Component)]` type for constructor injection —
+    /// the `@Component` of the framework. Construction is deferred to
+    /// startup, after config and the database pool are wired, and runs in
+    /// registration order: list a component after its dependencies.
+    pub fn component<T: Component>(mut self) -> Self {
+        self.constructors.push(Box::new(|ctx| {
+            let component = T::construct(ctx)?;
+            ctx.register(component);
+            Ok(())
+        }));
         self
     }
 
@@ -65,6 +86,12 @@ impl Application {
         let addr = format!("{}:{}", config.app.server.host, config.app.server.port);
         let static_dir = config.app.static_files.dir.clone();
         self.context.register(config);
+
+        // Construct components now that config and the pool are available.
+        // Fail fast on a missing dependency, like a Spring context refresh.
+        for construct in self.constructors.drain(..) {
+            construct(&mut self.context)?;
+        }
 
         let mut router = self
             .router

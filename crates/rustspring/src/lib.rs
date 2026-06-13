@@ -37,7 +37,12 @@
 //! }
 //! ```
 
+// Lets the `::rustspring::` paths emitted by #[derive(Component)] resolve
+// inside this crate's own tests.
+extern crate self as rustspring;
+
 pub mod app;
+pub mod component;
 pub mod config;
 pub mod context;
 #[cfg(feature = "postgres")]
@@ -45,9 +50,12 @@ pub mod db;
 pub mod error;
 
 pub use app::Application;
+pub use component::{Component, ComponentError};
 pub use config::{AppConfig, ConfigSource};
 pub use context::{AppContext, Config, Inject};
 pub use error::AppError;
+// The derive macro shares the trait's name, like serde's Serialize.
+pub use rustspring_macros::Component;
 
 #[cfg(feature = "postgres")]
 pub use db::transactional;

@@ -12,6 +12,7 @@ default = ["postgres"]
 postgres = ["dep:sqlx"]
 
 [dependencies]
+rustspring-macros = { version = "0.1.0", path = "../rustspring-macros" }
 axum = { workspace = true }
 tokio = { workspace = true }
 tower-http = { workspace = true }

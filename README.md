@@ -17,6 +17,7 @@ about managing and configuring.
 | `application-{profile}.yml` + `spring.profiles.active` | `config/application-{profile}.toml` + `APP_PROFILE` env var |
 | `@ConfigurationProperties(prefix = "x")` | `config.section::<MyConfig>("x")` |
 | `@Bean` / singleton beans | `Application::manage(component)` |
+| `@Component` + constructor injection | `#[derive(Component)]` + `Application::component::<T>()` |
 | `@Autowired` | `Inject<T>` extractor in handlers |
 | HikariCP connection pool | `[database]` config → managed `PgPool` (lazy connect) |
 | `@Transactional` | `transactional(&pool, \|tx\| ...)` — commit on `Ok`, rollback on `Err` |
@@ -145,6 +146,31 @@ async fn handler(
 
 A missing registration produces a clear error naming the type and the fix.
 
+For components whose dependencies live in the context, skip the hand-wiring
+entirely with `#[derive(Component)]` — the `@Component` of rustspring. Every
+`Arc<T>` field is a dependency resolved at startup; other fields get
+`Default::default()`:
+
+```rust
+use rustspring::Component;
+
+#[derive(Component)]
+struct UserService {
+    pool: Arc<PgPool>,             // injected from [database] config
+    greeter: Arc<GreetingService>, // injected: another component
+    cache: RwLock<Vec<User>>,      // plain state: Default::default()
+}
+
+Application::new()
+    .manage(GreetingService::new())
+    .component::<UserService>()    // constructed at startup, in order
+```
+
+Components are constructed in registration order after config and the pool
+are wired, so list a component after its dependencies. A missing dependency
+fails startup with an error naming both types — fail fast, like a Spring
+context refresh.
+
 ### 5. Database pool & transactions
 
 Add a `[database]` section and the framework builds and registers a `PgPool`
@@ -224,14 +250,14 @@ The [app/](app) crate exercises every feature:
 
 - [app/src/main.rs](app/src/main.rs) — bootstrap and wiring
 - [app/src/greeting.rs](app/src/greeting.rs) — singleton service, custom config section, profile awareness
-- [app/src/users.rs](app/src/users.rs) — connection pool, multi-statement transaction with rollback
+- [app/src/users.rs](app/src/users.rs) — `#[derive(Component)]` service with injected pool, multi-statement transaction with rollback
 
 ## Roadmap
 
-- `#[derive(Component)]` proc-macro to remove registration boilerplate
-- Constructor-based dependency resolution between components
-- MySQL / SQLite support behind feature flags
-- `cargo generate` template for scaffolding new apps
+- [x] `#[derive(Component)]` with constructor-based dependency resolution
+- [ ] Automatic dependency ordering (topological sort) for components
+- [ ] MySQL / SQLite support behind feature flags
+- [ ] `cargo generate` template for scaffolding new apps
 
 Contributions welcome — open an issue or PR.
 
