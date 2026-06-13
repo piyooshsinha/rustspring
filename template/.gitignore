@@ -1,2 +1,5 @@
 /target
 .env
+# SQLite data files created at runtime
+data.db
+data.db-*

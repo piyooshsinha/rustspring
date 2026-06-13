@@ -51,8 +51,9 @@ cd myapp && cargo run
 ```
 
 That gives you a running application with profiles, config, a health
-endpoint, and an example service — add a `[database]` section when you need
-the pool.
+endpoint, a singleton service, and a **SQLite-backed CRUD endpoint that works
+with zero setup** — no Docker, no database server. Switch to Postgres or
+MySQL with one feature flag when you're ready.
 
 ### Or run the demo
 
