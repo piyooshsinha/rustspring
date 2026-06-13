@@ -76,6 +76,9 @@ pub struct ConfigSource {
     figment: Figment,
 }
 
+// figment::Error is large, but config is loaded once at startup — boxing
+// would complicate the public API for no practical gain.
+#[allow(clippy::result_large_err)]
 impl ConfigSource {
     pub fn load() -> Result<Self, figment::Error> {
         let profile = std::env::var("APP_PROFILE").unwrap_or_else(|_| "dev".to_string());
@@ -101,5 +104,90 @@ impl ConfigSource {
     /// ```
     pub fn section<'de, T: Deserialize<'de>>(&self, key: &str) -> Result<T, figment::Error> {
         self.figment.extract_inner(key)
+    }
+}
+
+#[cfg(test)]
+// Jail's closures return figment::Error by design; see allow on ConfigSource.
+#[allow(clippy::result_large_err)]
+mod tests {
+    use super::*;
+    use figment::Jail;
+
+    #[test]
+    fn defaults_apply_when_no_config_files_exist() {
+        Jail::expect_with(|_jail| {
+            let cfg = ConfigSource::load().expect("load");
+            assert_eq!(cfg.app.server.host, "127.0.0.1");
+            assert_eq!(cfg.app.server.port, 8080);
+            assert!(cfg.app.database.is_none());
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn profile_file_overrides_base_file() {
+        Jail::expect_with(|jail| {
+            jail.create_dir("config")?;
+            jail.create_file(
+                "config/application.toml",
+                r#"
+                [server]
+                port = 8080
+                [greeting]
+                template = "base"
+                "#,
+            )?;
+            jail.create_file(
+                "config/application-staging.toml",
+                r#"
+                [server]
+                port = 9999
+                "#,
+            )?;
+            jail.set_env("APP_PROFILE", "staging");
+
+            let cfg = ConfigSource::load().expect("load");
+            assert_eq!(cfg.app.profile, "staging");
+            assert_eq!(cfg.app.server.port, 9999, "profile file wins");
+
+            #[derive(Deserialize)]
+            struct Greeting {
+                template: String,
+            }
+            let g: Greeting = cfg.section("greeting").expect("custom section");
+            assert_eq!(g.template, "base", "base settings still visible");
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn env_vars_override_files() {
+        Jail::expect_with(|jail| {
+            jail.create_dir("config")?;
+            jail.create_file("config/application.toml", "[server]\nport = 8080")?;
+            jail.set_env("APP_SERVER__PORT", "7070");
+
+            let cfg = ConfigSource::load().expect("load");
+            assert_eq!(cfg.app.server.port, 7070, "env var wins over file");
+            Ok(())
+        });
+    }
+
+    #[test]
+    fn database_section_parses_with_default_pool_size() {
+        Jail::expect_with(|jail| {
+            jail.create_dir("config")?;
+            jail.create_file(
+                "config/application.toml",
+                "[database]\nurl = \"postgres://localhost/test\"",
+            )?;
+
+            let cfg = ConfigSource::load().expect("load");
+            let db = cfg.app.database.expect("database config");
+            assert_eq!(db.url, "postgres://localhost/test");
+            assert_eq!(db.max_connections, 10, "default pool size");
+            Ok(())
+        });
     }
 }

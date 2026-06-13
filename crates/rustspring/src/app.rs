@@ -9,10 +9,7 @@ use axum::{Extension, Json, Router};
 use serde_json::json;
 use tower_http::trace::TraceLayer;
 
-use crate::{
-    config::ConfigSource,
-    context::AppContext,
-};
+use crate::{config::ConfigSource, context::AppContext};
 
 pub struct Application {
     context: AppContext,
@@ -106,9 +103,7 @@ impl Application {
     }
 }
 
-async fn health(
-    Extension(ctx): Extension<AppContext>,
-) -> Json<serde_json::Value> {
+async fn health(Extension(ctx): Extension<AppContext>) -> Json<serde_json::Value> {
     let profile = ctx
         .get::<ConfigSource>()
         .map(|c: Arc<ConfigSource>| c.app.profile.clone())

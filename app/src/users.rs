@@ -15,8 +15,8 @@ use rustspring::{
     },
     transactional, AppError, Inject,
 };
-use sqlx::PgPool;
 use serde::{Deserialize, Serialize};
+use sqlx::PgPool;
 
 #[derive(Serialize, sqlx::FromRow)]
 struct User {

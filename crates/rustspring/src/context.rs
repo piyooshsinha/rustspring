@@ -102,3 +102,39 @@ impl<S: Send + Sync> FromRequestParts<S> for Config {
             .map(|Inject(cfg)| Config(cfg))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct Counter(std::sync::atomic::AtomicU64);
+
+    #[test]
+    fn registered_component_is_a_shared_singleton() {
+        let mut ctx = AppContext::default();
+        ctx.register(Counter(std::sync::atomic::AtomicU64::new(0)));
+
+        let a = ctx.get::<Counter>().expect("registered");
+        let b = ctx.get::<Counter>().expect("registered");
+        a.0.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+        assert_eq!(
+            b.0.load(std::sync::atomic::Ordering::SeqCst),
+            1,
+            "both handles see the same instance"
+        );
+    }
+
+    #[test]
+    fn unregistered_type_returns_none() {
+        let ctx = AppContext::default();
+        assert!(ctx.get::<Counter>().is_none());
+    }
+
+    #[test]
+    fn reregistering_replaces_the_component() {
+        let mut ctx = AppContext::default();
+        ctx.register(7u32);
+        ctx.register(42u32);
+        assert_eq!(*ctx.get::<u32>().unwrap(), 42);
+    }
+}
