@@ -45,7 +45,7 @@ pub mod app;
 pub mod component;
 pub mod config;
 pub mod context;
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
 pub mod db;
 pub mod error;
 
@@ -57,14 +57,14 @@ pub use error::AppError;
 // The derive macro shares the trait's name, like serde's Serialize.
 pub use rustspring_macros::Component;
 
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
 pub use db::transactional;
 
 // Re-export the stack so applications only depend on `rustspring`.
 pub use axum;
 pub use figment;
 pub use serde_json;
-#[cfg(feature = "postgres")]
+#[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
 pub use sqlx;
 pub use tokio;
 pub use tracing;

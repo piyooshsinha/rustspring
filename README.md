@@ -19,7 +19,7 @@ about managing and configuring.
 | `@Bean` / singleton beans | `Application::manage(component)` |
 | `@Component` + constructor injection | `#[derive(Component)]` + `Application::component::<T>()` |
 | `@Autowired` | `Inject<T>` extractor in handlers |
-| HikariCP connection pool | `[database]` config → managed `PgPool` (lazy connect) |
+| HikariCP connection pool | `[database]` config → managed pool: Postgres, MySQL, or SQLite (lazy connect) |
 | `@Transactional` | `transactional(&pool, \|tx\| ...)` — commit on `Ok`, rollback on `Err` |
 | `@ControllerAdvice` error handling | `AppError` → JSON HTTP responses, works with `?` |
 | Actuator health endpoint | `GET /actuator/health` built in |
@@ -189,7 +189,21 @@ refresh.
 
 ### 5. Database pool & transactions
 
-Add a `[database]` section and the framework builds and registers a `PgPool`
+Postgres is the default backend; MySQL and SQLite are one feature flag away,
+and the framework picks the pool type from the URL scheme:
+
+```toml
+# Cargo.toml — pick your backend(s)
+rustspring = { git = "...", default-features = false, features = ["sqlite"] }
+```
+
+| Feature | URL scheme | Injected pool |
+|---|---|---|
+| `postgres` (default) | `postgres://...` | `Inject<PgPool>` |
+| `mysql` | `mysql://...` | `Inject<MySqlPool>` |
+| `sqlite` | `sqlite://app.db?mode=rwc` | `Inject<SqlitePool>` |
+
+Add a `[database]` section and the framework builds and registers the pool
 for you. The pool connects **lazily** — your app boots even if the database is
 down, and connects on first use:
 
@@ -272,7 +286,7 @@ The [app/](app) crate exercises every feature:
 
 - [x] `#[derive(Component)]` with constructor-based dependency resolution
 - [x] Automatic dependency ordering — registration order is irrelevant
-- [ ] MySQL / SQLite support behind feature flags
+- [x] MySQL / SQLite support behind feature flags
 - [x] `cargo generate` template for scaffolding new apps
 
 Contributions welcome — open an issue or PR.

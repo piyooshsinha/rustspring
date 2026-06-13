@@ -36,8 +36,14 @@ jobs:
         run: cargo fmt --all --check
       - name: Clippy
         run: cargo clippy --all-targets -- -D warnings
+      - name: Clippy (no database backend)
+        run: cargo clippy -p rustspring --no-default-features --all-targets -- -D warnings
+      - name: Clippy (all backends)
+        run: cargo clippy -p rustspring --all-features --all-targets -- -D warnings
       - name: Test
         run: cargo test
+      - name: Test (all backends)
+        run: cargo test -p rustspring --all-features
       - name: Build
         run: cargo build
 

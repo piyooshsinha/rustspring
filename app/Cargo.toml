@@ -12,4 +12,4 @@ serde = { workspace = true }
 # Direct deps because #[tokio::main] and derive(sqlx::FromRow) expand to
 # paths that must resolve in this crate; re-exports don't satisfy macros.
 tokio = { workspace = true }
-sqlx = { workspace = true }
+sqlx = { workspace = true, features = ["postgres"] }

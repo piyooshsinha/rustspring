@@ -9,7 +9,9 @@ description = "A Spring Boot-style application framework for Rust: profiles, con
 
 [features]
 default = ["postgres"]
-postgres = ["dep:sqlx"]
+postgres = ["dep:sqlx", "sqlx/postgres"]
+mysql = ["dep:sqlx", "sqlx/mysql"]
+sqlite = ["dep:sqlx", "sqlx/sqlite"]
 
 [dependencies]
 rustspring-macros = { version = "0.1.0", path = "../rustspring-macros" }

@@ -16,7 +16,7 @@ pub enum AppError {
     #[error("bad request: {0}")]
     BadRequest(String),
 
-    #[cfg(feature = "postgres")]
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
     #[error("database error: {0}")]
     Database(#[from] sqlx::Error),
 

@@ -59,6 +59,59 @@ impl Application {
         self
     }
 
+    /// Register the connection pool matching the `database.url` scheme,
+    /// for whichever backends are enabled as features. The pool connects
+    /// lazily, so the app boots even if the database is down.
+    #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
+    fn register_pool(
+        &mut self,
+        db_cfg: &crate::config::DatabaseConfig,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let url = db_cfg.url.as_str();
+
+        #[cfg(feature = "postgres")]
+        if url.starts_with("postgres") {
+            self.context
+                .register(crate::db::build_pool::<sqlx::Postgres>(db_cfg)?);
+            tracing::info!(
+                backend = "postgres",
+                max_connections = db_cfg.max_connections,
+                "database pool configured (lazy connect)"
+            );
+            return Ok(());
+        }
+
+        #[cfg(feature = "mysql")]
+        if url.starts_with("mysql") {
+            self.context
+                .register(crate::db::build_pool::<sqlx::MySql>(db_cfg)?);
+            tracing::info!(
+                backend = "mysql",
+                max_connections = db_cfg.max_connections,
+                "database pool configured (lazy connect)"
+            );
+            return Ok(());
+        }
+
+        #[cfg(feature = "sqlite")]
+        if url.starts_with("sqlite") {
+            self.context
+                .register(crate::db::build_pool::<sqlx::Sqlite>(db_cfg)?);
+            tracing::info!(
+                backend = "sqlite",
+                max_connections = db_cfg.max_connections,
+                "database pool configured (lazy connect)"
+            );
+            return Ok(());
+        }
+
+        Err(format!(
+            "database.url scheme is not supported by the enabled rustspring \
+             features (postgres/mysql/sqlite): {url}"
+        )
+        .into())
+    }
+
     /// Load config, wire everything, and serve until shutdown (Ctrl-C).
     pub async fn run(mut self) -> Result<(), Box<dyn std::error::Error>> {
         init_tracing();
@@ -67,14 +120,9 @@ impl Application {
         let profile = config.app.profile.clone();
         tracing::info!(profile, "starting application");
 
-        #[cfg(feature = "postgres")]
+        #[cfg(any(feature = "postgres", feature = "mysql", feature = "sqlite"))]
         if let Some(db_cfg) = &config.app.database {
-            let pool = crate::db::build_pool(db_cfg)?;
-            tracing::info!(
-                max_connections = db_cfg.max_connections,
-                "database pool configured (lazy connect)"
-            );
-            self.context.register(pool);
+            self.register_pool(db_cfg)?;
         }
 
         let addr = format!("{}:{}", config.app.server.host, config.app.server.port);
