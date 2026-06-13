@@ -10,12 +10,10 @@ use serde_json::json;
 use tower_http::trace::TraceLayer;
 
 use crate::{
-    component::{Component, ComponentError},
+    component::{self, Component, DeferredConstructor},
     config::ConfigSource,
     context::AppContext,
 };
-
-type DeferredConstructor = Box<dyn FnOnce(&mut AppContext) -> Result<(), ComponentError> + Send>;
 
 pub struct Application {
     context: AppContext,
@@ -47,14 +45,10 @@ impl Application {
 
     /// Register a `#[derive(Component)]` type for constructor injection —
     /// the `@Component` of the framework. Construction is deferred to
-    /// startup, after config and the database pool are wired, and runs in
-    /// registration order: list a component after its dependencies.
+    /// startup, after config and the database pool are wired, and resolves
+    /// in dependency order automatically — registration order is irrelevant.
     pub fn component<T: Component>(mut self) -> Self {
-        self.constructors.push(Box::new(|ctx| {
-            let component = T::construct(ctx)?;
-            ctx.register(component);
-            Ok(())
-        }));
+        self.constructors.push(component::deferred::<T>());
         self
     }
 
@@ -87,11 +81,10 @@ impl Application {
         let static_dir = config.app.static_files.dir.clone();
         self.context.register(config);
 
-        // Construct components now that config and the pool are available.
-        // Fail fast on a missing dependency, like a Spring context refresh.
-        for construct in self.constructors.drain(..) {
-            construct(&mut self.context)?;
-        }
+        // Construct components now that config and the pool are available,
+        // resolving dependency order automatically. Fail fast on a missing
+        // dependency or cycle, like a Spring context refresh.
+        component::construct_all(&mut self.context, std::mem::take(&mut self.constructors))?;
 
         let mut router = self
             .router

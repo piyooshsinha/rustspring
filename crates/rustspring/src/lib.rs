@@ -50,7 +50,7 @@ pub mod db;
 pub mod error;
 
 pub use app::Application;
-pub use component::{Component, ComponentError};
+pub use component::{Component, ComponentError, WiringError};
 pub use config::{AppConfig, ConfigSource};
 pub use context::{AppContext, Config, Inject};
 pub use error::AppError;

@@ -162,14 +162,15 @@ struct UserService {
 }
 
 Application::new()
-    .manage(GreetingService::new())
-    .component::<UserService>()    // constructed at startup, in order
+    .component::<UserService>()    // order doesn't matter —
+    .manage(GreetingService::new()) // dependencies are resolved automatically
 ```
 
-Components are constructed in registration order after config and the pool
-are wired, so list a component after its dependencies. A missing dependency
-fails startup with an error naming both types — fail fast, like a Spring
-context refresh.
+Components are constructed at startup after config and the pool are wired,
+and dependency order is resolved automatically — register them in any order.
+A dependency that was never registered (or a cycle) fails startup with a
+report listing every stuck component — fail fast, like a Spring context
+refresh.
 
 ### 5. Database pool & transactions
 
@@ -255,7 +256,7 @@ The [app/](app) crate exercises every feature:
 ## Roadmap
 
 - [x] `#[derive(Component)]` with constructor-based dependency resolution
-- [ ] Automatic dependency ordering (topological sort) for components
+- [x] Automatic dependency ordering — registration order is irrelevant
 - [ ] MySQL / SQLite support behind feature flags
 - [ ] `cargo generate` template for scaffolding new apps
 
